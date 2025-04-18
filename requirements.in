@@ -1,0 +1,16 @@
+# This file lists the required packages for the project.
+torch 
+torchvision 
+torchaudio
+faiss-cpu  # Use faiss-cpu if you- gpu poor like me :)
+fastapi 
+uvicorn  # FastAPI and its server
+pymongo  # MongoDB client
+numpy
+Pillow # For image handling
+python-multipart # For FastAPI file uploads
+requests # Generally useful
+tritonclient[all] # Installs http and grpc clients, requires protobuf etc.
+sentence-transformers # Only needed for populate_db.py script
+transformers # Dependency for sentence-transformers & CLIP
+python-dotenv # To load environment variables for config

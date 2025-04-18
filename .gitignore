@@ -1,0 +1,17 @@
+.env
+venv
+.ruff_cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.db
+*.sqlite
+*.egg-info/
+*.egg
+*.log
+models/*
+!data/faiss_index.bin
+!data/id_mapping.pkl
+*.zip
+uploads/*

@@ -11,12 +11,15 @@ db = client["productdb"]
 products_col = db["products"]
 logs_col = db["logs"]
 
+# Add this before using the collection
+products_col.create_index("product_id", unique=True)
+
 
 def get_product_by_id(product_id):
     product = products_col.find_one({"product_id": product_id})
     if product:
         # Convert ObjectId to string
-        product['_id'] = str(product['_id'])
+        product["_id"] = str(product["_id"])
     return product
 
 
@@ -25,30 +28,28 @@ def insert_sample_products(products):
     if not products:
         print("No products to insert")
         return
-    
+
     # Extract product IDs from new data
     new_product_ids = [p["product_id"] for p in products]
-    
+
     # Find existing product IDs in MongoDB
     existing_product_ids = set(
-        doc["product_id"] 
+        doc["product_id"]
         for doc in products_col.find(
-            {"product_id": {"$in": new_product_ids}}, 
-            {"product_id": 1}
+            {"product_id": {"$in": new_product_ids}}, {"product_id": 1}
         )
     )
-    
+    print(f"No. of Existing product IDs: {len(existing_product_ids)}")
+
     # Prepare operations
     operations = []
     for product in products:
         operations.append(
             UpdateOne(
-                {"product_id": product["product_id"]},
-                {"$set": product},
-                upsert=True
+                {"product_id": product["product_id"]}, {"$set": product}, upsert=True
             )
         )
-    
+
     if operations:
         try:
             result = products_col.bulk_write(operations, ordered=False)
@@ -64,10 +65,11 @@ def get_db_stats():
     """Get database statistics"""
     return {
         "product_count": products_col.count_documents({}),
-        "last_updated": products_col.find_one(
-            {}, 
-            sort=[("_id", -1)]
-        )["_id"].generation_time if products_col.count_documents({}) > 0 else None
+        "last_updated": products_col.find_one({}, sort=[("_id", -1)])[
+            "_id"
+        ].generation_time
+        if products_col.count_documents({}) > 0
+        else None,
     }
 
 

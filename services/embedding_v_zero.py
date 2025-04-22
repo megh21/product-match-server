@@ -25,13 +25,17 @@ def image_to_base64(image_path: str) -> str:
 def get_image_embedding(image_path: str):
     """Get embedding for an image using Cohere's multimodal model"""
     image_b64 = image_to_base64(image_path)
-    response = co.embed(
-         model="embed-english-v3.0",
-    input_type="image",
-    embedding_types=["float"],
-    images=[image_b64],
-)
-    return np.array(response.embeddings.float)
+    try:
+        response = co.embed(
+            model="embed-english-v3.0",
+            input_type="image",
+            embedding_types=["float"],
+            images=[image_b64],
+        )
+        return np.array(response.embeddings.float)
+    except Exception as e:
+        print(f"Error getting image embedding: {e}")
+        raise ValueError("Failed to get image embedding. mybe too many tries")
 
 
 def get_text_embedding(text: str):

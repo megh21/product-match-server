@@ -1,0 +1,24 @@
+name: "image_encoder" # Your model name
+platform: "tensorrt_plan"
+max_batch_size: 32 
+
+input [
+  {
+    name: "pixel_values" 
+    data_type: TYPE_FP16 # Input usually FP16/FP32
+    # Shape: C, H, W
+    dims: [ 3, 224, 224 ] # Example: Adjust to your model's input size
+  }
+]
+
+output [
+  {
+    name: "image_embeds" # Or "pooler_output" etc.
+    data_type: TYPE_FP16 # Or TYPE_FP32
+    # Shape of the output embedding vector
+    dims: [ 768 ] # Example: Adjust to match text encoder dimension if CLIP-like
+  }
+]
+
+instance_group [ { count: 1, kind: KIND_GPU } ]
+dynamic_batching { }

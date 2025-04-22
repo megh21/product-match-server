@@ -1,0 +1,28 @@
+name: "text_encoder" # Your model name
+platform: "tensorrt_plan"
+max_batch_size: 32 
+
+input [
+  {
+    name: "input_ids" 
+    data_type: TYPE_INT64 # Or TYPE_INT32
+    dims: [ -1 ] # Variable sequence length
+  },
+  {
+    name: "attention_mask" 
+    data_type: TYPE_INT64 # Or TYPE_INT32
+    dims: [ -1 ] # Variable sequence length
+  }
+]
+
+output [
+  {
+    name: "last_hidden_state" # Or "last_hidden_state", "pooler_output" etc.
+    data_type: TYPE_FP16 # Or TYPE_FP32 depending on build
+    # Shape of the output embedding vector
+    dims: [ 768 ] # Example: Adjust to your model's embedding dimension
+  }
+]
+
+instance_group [ { count: 1, kind: KIND_GPU } ]
+dynamic_batching { }

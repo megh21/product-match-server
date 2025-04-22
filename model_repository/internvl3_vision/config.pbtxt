@@ -1,0 +1,32 @@
+name: "internvl3_vision"
+platform: "tensorrt_plan"
+max_batch_size: 16 # Or your preferred max batch
+
+input [
+  {
+    # Must match the input name in your vision ONNX export
+    name: "pixel_values" 
+    data_type: TYPE_FP16 # Input usually FP16/FP32 from preprocessor
+    # Shape EXCLUDING batch dim: (Channels, Height, Width)
+    dims: [ 3, 448, 448 ] # Verify image size (448x448 for InternVL3)
+  }
+]
+
+output [
+  {
+    # Must match the output name in your vision ONNX export
+    name: "vision_output" # Or "vision_embeddings", "last_hidden_state" etc. 
+    data_type: TYPE_FP16 # Output type, usually FP16/FP32
+    # Shape EXCLUDING batch dim: (Num_Tokens, Hidden_Size)
+    dims: [ 256, 1536 ] # Verify (256 tokens, 1536 hidden for InternVL3)
+  }
+]
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+  }
+]
+
+dynamic_batching { } # Enable dynamic batching with default settings

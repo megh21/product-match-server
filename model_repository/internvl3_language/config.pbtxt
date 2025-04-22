@@ -1,0 +1,37 @@
+name: "internvl3_language"
+platform: "tensorrt_plan"
+max_batch_size: 8 # Or your preferred max batch
+
+input [
+  {
+    name: "inputs_embeds" # Matches your LM ONNX export
+    data_type: TYPE_FP16 # Matches engine build precision
+    # Shape EXCLUDING batch dim: (Sequence_Length, Hidden_Size)
+    # Use -1 for dynamic sequence length
+    dims: [ -1, 1536 ] # Verify hidden size
+  },
+  {
+    name: "attention_mask" # Matches your LM ONNX export
+    data_type: TYPE_INT64 # Or TYPE_INT32 if used during export
+    # Shape EXCLUDING batch dim: (Sequence_Length)
+    dims: [ -1 ]
+  }
+]
+
+output [
+  {
+    name: "logits" # Matches your LM ONNX export
+    data_type: TYPE_FP16 # Matches engine build precision
+    # Shape EXCLUDING batch dim: (Sequence_Length, Vocab_Size)
+    dims: [ -1, 151674 ] # Verify vocab size (151674 based on logs)
+  }
+]
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+  }
+]
+
+dynamic_batching { }

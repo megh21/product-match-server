@@ -1,0 +1,9 @@
+faiss-cpu  # Use faiss-cpu if you- gpu poor like me :)
+fastapi 
+uvicorn  # FastAPI and its server
+pymongo  # MongoDB client
+numpy
+Pillow # For image handling
+python-multipart # For FastAPI file uploads
+requests # Generally useful
+python-dotenv 

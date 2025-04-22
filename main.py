@@ -8,10 +8,11 @@ from typing import Dict, Any
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from PIL import Image
+from pathlib import Path
 
 from services.embeddings import get_combined_embedding, CURRENT_MODE, DIM_COMBINED
 from mongo import get_product_by_id, get_db_stats
@@ -90,7 +91,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# app.mount("/static", StaticFiles(directory="static"), name="static")
+# Mount the Next.js static files
+# Path to the static files (Next.js output)
+static_files_dir = Path("./frontend_build")
+app.mount("/_next", StaticFiles(directory=str(static_files_dir / "_next")), name="next_static")
+app.mount("/static", StaticFiles(directory=str(static_files_dir / "static")), name="static_files")
+
+# Serve the placeholder images directly
+for placeholder_file in ["placeholder.svg", "placeholder.jpg", "placeholder-logo.svg", 
+                        "placeholder-logo.png", "placeholder-user.jpg"]:
+    if (static_files_dir / placeholder_file).exists():
+        app.mount(f"/{placeholder_file}", StaticFiles(directory=str(static_files_dir), 
+                                                   html=False, 
+                                                   check_dir=False), 
+                name=f"placeholder_{placeholder_file}")
+
 
 # Static files for serving images
 app.mount(
@@ -100,7 +116,7 @@ app.mount(
 )
 
 # Add this after your existing StaticFiles mounts
-app.mount("/_next", StaticFiles(directory="static/_next"), name="next_static")
+# app.mount("/_next", StaticFiles(directory="static/_next"), name="next_static")
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -117,6 +133,7 @@ def get_cached_product_by_id(product_id: str) -> Dict[str, Any]:
     return get_product_by_id(product_id)
 
 
+@app.post("/api/match", response_model=MatchResponse, tags=["API"])
 @app.post("/api/match/", response_model=MatchResponse, tags=["API"])
 async def match_product(
     image: UploadFile = File(...),
@@ -261,10 +278,56 @@ def _remove_temp_file(file_path: str) -> None:
         logger.warning(f"Failed to remove temporary file {file_path}: {e}")
 
 
-@app.get("/")
-async def root():
-    """Serve the main HTML page."""
-    return FileResponse("static/index.html")
+# @app.get("/")
+# async def root():
+#     """Serve the main HTML page."""
+#     return FileResponse("static/index.html")
+
+# Serve the product image endpoint
+@app.get("/api/product-image/{filename}")
+async def get_product_image(filename: str):
+    # Implement your product image logic or forward to your backend
+    return JSONResponse(
+        content={
+            "error": "Image not found", 
+            "placeholder": f"/placeholder.svg?height=300&width=300&text={filename}"
+        },
+        status_code=404,
+    )
+
+# Serve the frontend for all other routes
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    # Special case for the root path
+    if full_path == "" or full_path == "/":
+        index_path = static_files_dir / "index.html"
+        if index_path.exists():
+            return FileResponse(str(index_path))
+    
+    # Try to serve the requested path directly
+    requested_path = static_files_dir / full_path
+    
+    # Check if it's a file
+    if requested_path.is_file():
+        return FileResponse(str(requested_path))
+    
+    # Check if there's an HTML file for this path
+    html_path = requested_path / "index.html"
+    if html_path.is_file():
+        return FileResponse(str(html_path))
+        
+    html_path_with_extension = static_files_dir / f"{full_path}.html"
+    if html_path_with_extension.is_file():
+        return FileResponse(str(html_path_with_extension))
+    
+    # If not found, fall back to index.html (client-side routing)
+    fallback_path = static_files_dir / "index.html"
+    if fallback_path.exists():
+        return FileResponse(str(fallback_path))
+    
+    # If even index.html doesn't exist, return 404
+    raise HTTPException(status_code=404, detail="File not found")
+
 
 
 @app.get("/health", response_model=HealthStatus, tags=["System"])

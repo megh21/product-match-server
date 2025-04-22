@@ -1,9 +1,7 @@
 import torch
 from transformers import CLIPVisionModelWithProjection, CLIPProcessor
 from PIL import Image
-import requests
 import os
-import numpy as np
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +23,7 @@ onnx_path = os.path.join(OUTPUT_DIR, ONNX_FILENAME)
 logging.info(f"Loading model: {MODEL_ID}")
 model = CLIPVisionModelWithProjection.from_pretrained(MODEL_ID)
 processor = CLIPProcessor.from_pretrained(MODEL_ID)
-model.eval() # Set to evaluation mode
+model.eval()  # Set to evaluation mode
 
 # --- Prepare Dummy Input ---
 logging.info("Preparing dummy input...")
@@ -36,20 +34,20 @@ except Exception as e:
     logging.error(f"Failed to load image: {e}")
     # Create a purely dummy tensor if image loading fails
     logging.warning("Using random tensor as dummy input.")
-    dummy_image = torch.randn(1, 3, 224, 224) # Batch, Channels, H, W
-    inputs = {'pixel_values': dummy_image}
+    dummy_image = torch.randn(1, 3, 224, 224)  # Batch, Channels, H, W
+    inputs = {"pixel_values": dummy_image}
 else:
     inputs = processor(images=image, return_tensors="pt")
 
-dummy_input = inputs['pixel_values'] # Shape: (batch_size, 3, 224, 224)
+dummy_input = inputs["pixel_values"]  # Shape: (batch_size, 3, 224, 224)
 logging.info(f"Dummy input shape: {dummy_input.shape}")
 
 # --- Define Input/Output Names and Dynamic Axes ---
 input_names = ["pixel_values"]
-output_names = ["image_embeds"] # Output name from CLIPVisionModelWithProjection
+output_names = ["image_embeds"]  # Output name from CLIPVisionModelWithProjection
 dynamic_axes = {
-    "pixel_values": {0: "batch_size"}, # Make batch size dynamic
-    "image_embeds": {0: "batch_size"}
+    "pixel_values": {0: "batch_size"},  # Make batch size dynamic
+    "image_embeds": {0: "batch_size"},
 }
 
 # --- Export to ONNX ---
@@ -62,7 +60,7 @@ try:
         input_names=input_names,
         output_names=output_names,
         dynamic_axes=dynamic_axes,
-        opset_version=14, # Use 14 or higher for better compatibility
+        opset_version=14,  # Use 14 or higher for better compatibility
         export_params=True,
         do_constant_folding=True,
     )
@@ -75,14 +73,18 @@ except Exception as e:
 logging.info("Verifying ONNX model...")
 try:
     import onnx
+
     onnx_model = onnx.load(onnx_path)
     onnx.checker.check_model(onnx_model)
     logging.info("ONNX model check successful.")
 
     # Further verification with ONNX Runtime
     import onnxruntime as ort
+
     logging.info("Running inference with ONNX Runtime...")
-    ort_session = ort.InferenceSession(onnx_path, providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+    ort_session = ort.InferenceSession(
+        onnx_path, providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
+    )
     ort_inputs = {input_names[0]: dummy_input.cpu().numpy()}
     ort_outputs = ort_session.run(output_names, ort_inputs)
     logging.info(f"ONNX Runtime output shape: {ort_outputs[0].shape}")

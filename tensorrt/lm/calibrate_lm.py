@@ -4,7 +4,7 @@ import numpy as np
 import os
 import logging
 import gc
-from transformers import AutoModelForCausalLM  # Needed to get hidden_size
+from transformers import AutoModelForCausalLM
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", force=True
@@ -16,10 +16,9 @@ LM_CACHE_FILE = "models/internvl3_lm/internvl3_language_calibration.cache"
 OUTPUT_DIR_LM = "models/internvl3_lm"
 
 # Calibration Settings
-NUM_CALIBRATION_BATCHES = 50  # How many random batches to generate
+NUM_CALIBRATION_BATCHES = 50
 CALIBRATION_BATCH_SIZE = 1
-# Sequence length for random embeddings during calibration
-# Should be representative, but not excessively long
+
 CALIBRATION_SEQ_LENGTH = 256
 
 # LM Input Details - Critical: Match the exported LM ONNX

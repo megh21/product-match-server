@@ -16,7 +16,7 @@ MAX_INPUT_LEN=1024
 MAX_OUTPUT_LEN=150
 BUILD_PRECISION="float16" # Match the --dtype used in the python script
 
-# --- Step 1: Convert HF Model to TRT-LLM Checkpoint Format ---
+# --- Step 1: Convert HF Model to TRT-LLM Checkpoint Format
 echo "------------------------------------------------------------------"
 echo "Step 1: Converting HF Model to TensorRT-LLM Checkpoint Format..."
 echo "Source HF Model: ${HF_MODEL_ID}"
@@ -72,8 +72,7 @@ venv/bin/trtllm-build \
     --paged_kv_cache enable \
     --remove_input_padding enable \
     --use_gpt_attention_plugin "$BUILD_PRECISION" \
-    # Removed --dtype (inferred from checkpoint)
-    # Removed --trust_remote_code (handled by conversion script)
+    # 
 
 echo "-----------------------------------------------------"
 echo "TensorRT-LLM Engine build process for LM finished."

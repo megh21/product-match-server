@@ -16,13 +16,13 @@ load_dotenv()
 # --- Configuration ---
 MODEL_ID = "OpenGVLab/InternVL3-2B"  # For loading processor
 
-# ===> PATH CORRECTIONS <===
+#
 CORRECT_BASE_DIR = "models/internvl3"  # Directory where ONNX exists
 VISION_ONNX_PATH = os.path.join(CORRECT_BASE_DIR, "internvl3_vision.onnx")
 VISION_CACHE_FILE = os.path.join(CORRECT_BASE_DIR, "internvl3_vision_calibration.cache")
 OUTPUT_DIR_VISION = CORRECT_BASE_DIR  # Use the same base directory
 
-# ===> Local Image Data Config <===
+# Calibration Settings
 CALIBRATION_IMAGE_DIR = "data/images"  # Your local image directory
 NUM_CALIBRATION_IMAGES = 100
 CALIBRATION_BATCH_SIZE = 8
@@ -34,7 +34,6 @@ VISION_INPUT_DTYPE = np.float16
 INPUT_SHAPE = (CALIBRATION_BATCH_SIZE, 3, IMAGE_SIZE, IMAGE_SIZE)
 
 # --- Image Processor Loading ---
-# ... (remains the same) ...
 try:
     image_processor = AutoImageProcessor.from_pretrained(
         MODEL_ID, trust_remote_code=True
@@ -45,8 +44,6 @@ except Exception as e:
     raise
 
 
-# --- Helper Function ---
-# ... (load_local_vision_calibration_batch remains the same) ...
 def load_local_vision_calibration_batch(image_files, indices):
     """Loads and preprocesses a batch of local image files."""
     batch_pil_images = []
@@ -86,11 +83,7 @@ def load_local_vision_calibration_batch(image_files, indices):
     return pixel_values
 
 
-# --- Vision Calibrator Class ---
-# ... (VisionCalibrator class remains the same) ...
-class VisionCalibrator(
-    trt.IInt8MinMaxCalibrator
-):  # Or IInt8EntropyCalibrator2 if preferred
+class VisionCalibrator(trt.IInt8MinMaxCalibrator):
     def __init__(self, image_file_list, cache_file):  # Takes list of file paths
         trt.IInt8MinMaxCalibrator.__init__(self)
         self.cache_file = cache_file
@@ -167,8 +160,6 @@ class VisionCalibrator(
             logging.error(f"Failed to write cache: {e}")
 
 
-# --- Factory Function (Updated) ---
-# ... (get_vision_calibrator logic remains the same, uses corrected cache path) ...
 def get_vision_calibrator():
     """Finds local images and creates the VisionCalibrator."""
     logging.info(f"Searching for calibration images in: {CALIBRATION_IMAGE_DIR}")
@@ -189,7 +180,6 @@ def get_vision_calibrator():
                 f"Requested {NUM_CALIBRATION_IMAGES} calibration images, found {num_available}. Using {num_to_use}."
             )
 
-        # Optionally shuffle
         # random.shuffle(all_files)
         calibration_files = all_files[:num_to_use]
         logging.info(f"Using {len(calibration_files)} images for vision calibration.")
@@ -205,7 +195,6 @@ def get_vision_calibrator():
 
 # --- Main block for testing ---
 if __name__ == "__main__":
-    # ... (remains the same) ...
     logging.info("--- Testing Vision Calibrator Setup (Local Data) ---")
     calibrator = get_vision_calibrator()
     if calibrator:

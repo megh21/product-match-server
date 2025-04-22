@@ -4,10 +4,7 @@ import logging
 import time
 import gc
 import torch
-
-# Import the factory function from the vision calibrator script
-# Make sure calibrate_vision.py uses the corrected paths now
-from calibrate_vision import (
+from calibrate.calibrate_vision import (
     get_vision_calibrator,
     VISION_CACHE_FILE,
     VISION_INPUT_NAME,
@@ -18,9 +15,7 @@ from calibrate_vision import (
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", force=True
 )
-
-# --- Configuration ---
-# ===> PATH CORRECTIONS <===
+# empty cache and gpu memory
 VISION_ONNX_PATH = os.path.join(
     CORRECT_BASE_DIR, "internvl3_vision.onnx"
 )  # Correct ONNX path
@@ -49,8 +44,7 @@ PROFILE_SHAPES = {
 }
 
 
-# --- Build Engine Function (Generic) ---
-# ... (build_engine function remains the same as before) ...
+# --- Build Engine Function (Generic)
 def build_engine(
     onnx_path,
     engine_path_prefix,

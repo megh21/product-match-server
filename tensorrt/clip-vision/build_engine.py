@@ -1,12 +1,7 @@
-# (Add to the end of calibrate_clip_vision.py or create a new build script)
 import tensorrt as trt
 import os
 import logging
-from calibrate_clip_vision import (
-    ClipVisionCalibrator,
-    ONNX_PATH,
-    CACHE_FILE,
-)  # Reuse definitions
+from calibrate.calibrate_clip_vision import ClipVisionCalibrator, CACHE_FILE, ONNX_PATH
 
 # --- Configuration ---
 ENGINE_PATH_FP16 = "models/clip_vision/clip_vision_fp16_py.engine"
@@ -55,9 +50,9 @@ def build_engine(
             config.int8_calibrator = ClipVisionCalibrator(
                 calib_dataset, cache_file
             )  # Use the class from calibrate script
-            # Optional: Set calibration profile if needed (usually automatic)
+
             # profile = builder.create_optimization_profile()
-            # ... set shapes for profile ...
+            #
             # config.add_optimization_profile(profile)
 
         else:

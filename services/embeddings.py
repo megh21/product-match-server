@@ -38,7 +38,7 @@ elif EMBEDDING_MODE == "cloud":
     try:
         from .embedding_v_zero import (
             get_text_embedding as _get_text_embedding_cloud,
-            get_image_embedding as _get_vision_embedding_cloud,
+            # get_image_embedding as _get_vision_embedding_cloud,
         )
 
         def _get_vision_embedding(images: list[Image.Image]) -> np.ndarray:
@@ -72,25 +72,29 @@ elif EMBEDDING_MODE == "cloud":
             text_emb = _get_text_embedding(text)
             if text_emb.ndim == 2:
                 text_emb = text_emb[0]  # Take first vector if batch returned
-            
+
             # Get image embedding (1024-dim)
             image_emb = _get_vision_embedding([image])
             if image_emb.ndim == 2:
                 image_emb = image_emb[0]  # Take first vector if batch returned
-            
+
             # Verify dimensions before concatenation
             if text_emb.shape[0] != VISION_DIM or image_emb.shape[0] != VISION_DIM:
-                logging.error(f"Dimension mismatch - Text: {text_emb.shape}, Image: {image_emb.shape}")
+                logging.error(
+                    f"Dimension mismatch - Text: {text_emb.shape}, Image: {image_emb.shape}"
+                )
                 raise ValueError("Embedding dimensions don't match expected size")
-            
+
             # Concatenate them to create combined embedding (2048-dim)
             result = np.concatenate([text_emb, image_emb])
-            
+
             # Verify final dimension
             if result.shape[0] != COMBINED_DIM:
-                logging.error(f"Combined embedding dimension mismatch. Expected {COMBINED_DIM}, got {result.shape[0]}")
+                logging.error(
+                    f"Combined embedding dimension mismatch. Expected {COMBINED_DIM}, got {result.shape[0]}"
+                )
                 raise ValueError("Combined embedding dimension incorrect")
-                
+
             return result
 
         TEXT_DIM = VISION_DIM = 1024

@@ -210,8 +210,6 @@ try:
 except Exception as e:
     logging.warning(f"ONNX verification failed: {e}", exc_info=True)
 
-# --- Convert to TensorRT ---
-
 
 logging.info("Created TensorRT conversion script at ...")
 

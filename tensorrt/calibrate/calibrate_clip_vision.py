@@ -14,14 +14,13 @@ CACHE_FILE = "models/clip_vision/calibration.cache"
 MODEL_ID = "openai/clip-vit-base-patch32"  # Match the exported model
 WORKSPACE_MB = 4096
 # Calibration Data Config
-DATASET_NAME = "restufiqih/fashion-product"  # Example: Use a relevant image dataset
+DATASET_NAME = "restufiqih/fashion-product"
 DATASET_SPLIT = "train"
 NUM_CALIBRATION_IMAGES = 200  # Number of images to use for calibration
 BATCH_SIZE = 8  # Batch size for calibration
 
 INPUT_NAME = "pixel_values"  # Must match the name in the ONNX file
 # Input shape expected by the ONNX model (check export script/netron)
-# Typically (batch, channel, height, width) for CLIP vision
 INPUT_SHAPE = (BATCH_SIZE, 3, 224, 224)  # Batch size here is calibration batch size
 
 # --- Helper function to load and preprocess data ---
@@ -68,9 +67,8 @@ def load_calibration_batch(dataset, indices):
             f"Batch shape mismatch: Got {pixel_values.shape}, expected {INPUT_SHAPE}. Reshaping/Padding might be needed."
         )
         # Add reshaping/error handling logic if necessary
-        # For now, we assume processor output matches
-        pass  # Assuming processor gives correct shape
-
+        #
+        pass
     return pixel_values
 
 
@@ -142,9 +140,8 @@ class ClipVisionCalibrator(trt.IInt8MinMaxCalibrator):
 
     def free_buffers(self):
         if self.device_input:
-            # Note: pycuda.autoinit usually handles freeing, but explicit is safer in scripts
             try:
-                # self.device_input.free() # autoinit should handle this
+                # self.device_input.free()
                 pass
             except Exception as e:
                 logging.warning(
@@ -168,16 +165,16 @@ def generate_calibration_cache():
             logging.error(f"ONNX Parser Error: {parser.get_error(error)}")
         raise ValueError("Failed to parse the ONNX file.")
 
-    # Ensure network input shape matches calibration shape if not dynamic
+    #
     # profile = builder.create_optimization_profile()
     # profile.set_shape(INPUT_NAME, min=INPUT_SHAPE, opt=INPUT_SHAPE, max=INPUT_SHAPE) # If fixed batch calib
     # config.add_optimization_profile(profile)
 
     logging.info("Loading calibration dataset...")
-    # Use streaming=True for large datasets if memory is a concern
+    # streaming=True
     calib_dataset = load_dataset(DATASET_NAME, split=DATASET_SPLIT, streaming=False)
-    # If streaming=True, you'd need to adapt the Calibrator to iterate differently
-    # calib_dataset_list = list(calib_dataset.take(NUM_CALIBRATION_IMAGES)) # Convert streamed to list
+    # If streaming=True
+    # calib_dataset_list = list(calib_dataset.take(NUM_CALIBRATION_IMAGES))
 
     config = builder.create_builder_config()
     config.set_memory_pool_limit(
@@ -190,10 +187,6 @@ def generate_calibration_cache():
     config.int8_calibrator = calibrator
     logging.info("INT8 Calibration configured.")
 
-    # --- Build Engine JUST to generate cache (optional, cache generated during calibration) ---
-    # We don't actually need to build the engine here if only cache is needed,
-    # the calibrator's get_batch will be called by trtexec later.
-    # However, running this ensures the calibrator works.
     logging.info("Running calibration process (engine build not saved here)...")
     # serialized_engine = builder.build_serialized_network(network, config)
     # if serialized_engine is None:
@@ -202,8 +195,6 @@ def generate_calibration_cache():
     #     logging.info("Calibration process simulation successful (cache should be written).")
     # del serialized_engine # Free memory
 
-    # The cache is written by the calibrator instance when TRT uses it.
-    # We just need to ensure the calibrator runs correctly. Let's simulate one batch fetch.
     # names = [network.get_input(i).name for i in range(network.num_inputs)]
     # batch_data_ptr = calibrator.get_batch(names)
     # if batch_data_ptr:
@@ -212,8 +203,8 @@ def generate_calibration_cache():
     #      logging.warning("Calibrator get_batch test returned None (might be expected if max_batches=0).")
 
     # --- Cleanup ---
-    # Calibrator buffers usually freed by pycuda.autoinit when script exits
-    # calibrator.free_buffers() # Call explicitly if not using autoinit or for clarity
+    #
+    # calibrator.free_buffers() #
 
     # Check if cache file was created by the (potential) build process above or previous runs
     if os.path.exists(CACHE_FILE):
@@ -279,7 +270,7 @@ def build_engine(
             config.int8_calibrator = ClipVisionCalibrator(
                 calib_dataset, cache_file
             )  # Use the class from calibrate script
-            # Optional: Set calibration profile if needed (usually automatic)
+            #
             # profile = builder.create_optimization_profile()
             # ... set shapes for profile ...
             # config.add_optimization_profile(profile)
@@ -305,12 +296,6 @@ def build_engine(
 
 
 if __name__ == "__main__":
-    # This script primarily defines the calibrator.
-    # We call a dummy function here just to trigger the imports and class definition.
-    # The actual calibration cache generation happens when trtexec USES this calibrator.
-    # If you want this script ITSELF to generate the cache, you need to fully
-    # build the engine with the config pointing to this calibrator instance.
-    # For now, let's just confirm the setup looks okay.
     logging.info("Calibrator script initialized. Ready for use with trtexec.")
     if __name__ == "__main__":
         logging.info("Loading calibration dataset for INT8 build...")
@@ -324,16 +309,14 @@ if __name__ == "__main__":
         # Add dataset inspection
         print_dataset_info(calib_dataset_main)
 
-        # --- Ensure these match the settings at the top of the file ---
-        # --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+        #
 
         # Load the dataset instance that will be passed to the calibrator during build
         calib_dataset_main = load_dataset(
             DATASET_NAME_BUILD, split=DATASET_SPLIT_BUILD, streaming=False
         )
-        # If using streaming=True, you might need this instead (but ensure calibrator handles list):
+        #
         # calib_dataset_main = list(load_dataset(DATASET_NAME_BUILD, split=DATASET_SPLIT_BUILD, streaming=True).take(NUM_IMAGES_BUILD))
-
         # Print dataset information
         print_dataset_info(calib_dataset_main)
 

@@ -4,9 +4,7 @@ import logging
 import time
 import gc
 import torch
-
-# Import the updated calibrator class and relevant configs
-from calibrate_vlm import (
+from calibrate.calibrate_vlm import (
     VLMCalibrator,
     CACHE_FILE,
     INPUT_NAMES as CALIBRATOR_INPUT_NAMES,
@@ -26,16 +24,14 @@ WORKSPACE_MB = 4096 * 4  # 16GB workspace, adjust based on GPU VRAM
 BUILD_FP16 = True
 BUILD_INT8 = True
 
-# --- Optimization Profile ---
-# Define min/opt/max shapes for EACH input in INPUT_NAMES_FOR_ENGINE
-# Ensure names match exactly what the ONNX graph expects (should match export)
+# --- Optimization Profile
 INPUT_NAMES_FOR_ENGINE = ["pixel_values", "input_ids", "attention_mask", "image_flags"]
 
 MIN_BATCH = 1
 OPT_BATCH = 4
 MAX_BATCH = 8
 
-# Use sequence lengths relevant for inference (can differ from calibration/export length)
+
 MIN_SEQ_LEN = 64  # Min length for inference context/generation step
 OPT_SEQ_LEN = 512  # Typical target context length
 MAX_SEQ_LEN = 1024  # Max supported context length (adjust based on VRAM)
@@ -60,7 +56,7 @@ PROFILE_SHAPES = {
         "opt": (OPT_BATCH, OPT_SEQ_LEN),
         "max": (MAX_BATCH, MAX_SEQ_LEN),
     },
-    "image_flags": {  # Added profile for image_flags
+    "image_flags": {
         "min": (MIN_BATCH, NUM_IMAGE_TOKENS),  # Batch dynamic, token dim fixed
         "opt": (OPT_BATCH, NUM_IMAGE_TOKENS),
         "max": (MAX_BATCH, NUM_IMAGE_TOKENS),
@@ -68,7 +64,7 @@ PROFILE_SHAPES = {
 }
 
 
-# --- Build Engine Function ---
+# --- Build Engine Function
 def build_engine(onnx_path, engine_path_prefix, precision="fp16", cache_file=None):
     """Builds and saves a TensorRT engine."""
     engine_final_path = f"{engine_path_prefix}_{precision}.engine"
@@ -76,11 +72,9 @@ def build_engine(onnx_path, engine_path_prefix, precision="fp16", cache_file=Non
         logging.warning(
             f"Engine file {engine_final_path} already exists. Skipping build."
         )
-        return True  # Consider it success if already built
+        return True
 
-    logger = trt.Logger(
-        trt.Logger.INFO
-    )  # INFO is usually sufficient, VERBOSE for deep debug
+    logger = trt.Logger(trt.Logger.INFO)
     builder = trt.Builder(logger)
 
     network_flags = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
@@ -92,7 +86,7 @@ def build_engine(onnx_path, engine_path_prefix, precision="fp16", cache_file=Non
         logging.error(f"ONNX file not found: {onnx_path}")
         return False
 
-    # Parse the ONNX file from disk (safer for large models)
+    # Parse the ONNX file from disk
     with open(onnx_path, "rb") as model_file:
         if not parser.parse(model_file.read()):
             logging.error("Failed to parse the ONNX model.")
@@ -166,14 +160,13 @@ def build_engine(onnx_path, engine_path_prefix, precision="fp16", cache_file=Non
 
             logging.info("Instantiating INT8 calibrator (VLMCalibrator)...")
             try:
-                # Pass only the cache file path, calibrator handles the rest
                 calibrator = VLMCalibrator(cache_file)
                 # Sanity check calibrator input names vs engine input names
                 if set(CALIBRATOR_INPUT_NAMES) != set(INPUT_NAMES_FOR_ENGINE):
                     logging.warning(
                         f"Mismatch between calibrator inputs {CALIBRATOR_INPUT_NAMES} and engine inputs {INPUT_NAMES_FOR_ENGINE}. Ensure calibrator provides all engine inputs."
                     )
-                    # This might not be fatal if calibrator provides a superset, but check carefully.
+
                 config.int8_calibrator = calibrator
                 logging.info("INT8 calibrator set.")
             except Exception as e:
@@ -233,7 +226,6 @@ def build_engine(onnx_path, engine_path_prefix, precision="fp16", cache_file=Non
     return True
 
 
-# --- Main Execution ---
 if __name__ == "__main__":
     logging.info("--- Starting TensorRT Engine Build Process ---")
     os.makedirs(ENGINE_DIR, exist_ok=True)

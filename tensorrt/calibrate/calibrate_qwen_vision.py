@@ -78,19 +78,13 @@ def load_calibration_batch(dataset, indices):
         logging.error(f"Error loading images from dataset: {e}")
         raise
 
-    # Apply the model-specific transform
-    # The transform might expect a list of PIL images or paths
-    # Check the implementation of `image_transform` if unsure
-    # Assuming it takes PIL images:
     try:
-        # The transform might return a tensor directly
-        # Ensure dtype matches INPUT_DTYPE and shape matches INPUT_SHAPE (excluding batch)
         batch_tensor = image_transform(batch_pil_images).to(
             INPUT_DTYPE
         )  # Apply transform
     except Exception as e:
         logging.error(f"Error applying image transform: {e}")
-        # You might need to debug the transform function here
+
         raise
 
     # Ensure correct shape and handle potential padding for the last batch
@@ -106,7 +100,6 @@ def load_calibration_batch(dataset, indices):
         logging.warning(
             f"Batch tensor shape mismatch: Got {batch_tensor.shape}, expected {INPUT_SHAPE}. Check transform/config."
         )
-        # Add reshaping/error handling if necessary
 
     return batch_tensor.cpu().numpy()  # Return as numpy array
 
@@ -163,14 +156,13 @@ class QwenVisionCalibrator(trt.IInt8MinMaxCalibrator):
         return None
 
     def write_calibration_cache(self, cache):
-        # Implementation same as other calibrators
         logging.info(f"Writing calibration cache: {self.cache_file}")
         os.makedirs(os.path.dirname(self.cache_file), exist_ok=True)
         with open(self.cache_file, "wb") as f:
             f.write(cache)
 
     def free_buffers(self):
-        # pycuda.autoinit handles freeing
+        # pycuda.autoinit
         logging.info("Buffers conceptually freed.")
 
 
@@ -179,7 +171,7 @@ def get_qwen_vision_calibrator():
     logging.info(f"Loading dataset {DATASET_NAME} for Qwen Vision calibration...")
     # Load the actual dataset object
     calib_dataset = load_dataset(DATASET_NAME, split=DATASET_SPLIT, streaming=False)
-    # If using streaming=True, convert to list first:
+    # If  streaming=True
     # calib_dataset = list(calib_dataset.take(NUM_CALIBRATION_IMAGES))
     return QwenVisionCalibrator(calib_dataset, CACHE_FILE)
 

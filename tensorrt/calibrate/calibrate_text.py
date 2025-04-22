@@ -17,14 +17,10 @@ MODEL_ID = os.getenv("TEXT_MODEL_ID", "sentence-transformers/all-MiniLM-L6-v2")
 MAX_SEQ_LENGTH = 128  # Must match export script
 
 # Calibration Data Config
-# Option 1: Use product names from your styles.csv
+
 STYLES_CSV = os.getenv("STYLES_CSV", "data/styles.csv")  # Make sure path is correct
 CALIBRATION_DATA_SOURCE = "product_names"  # or "huggingface_dataset"
-# Option 2: Use a Hugging Face dataset (if product names are too few/not diverse)
-# DATASET_NAME = "glue"
-# DATASET_CONFIG = "sst2" # Example config
-# DATASET_SPLIT = "train"
-# DATASET_TEXT_COLUMN = "sentence" # Column containing text
+
 
 NUM_CALIBRATION_SAMPLES = 500  # Number of text samples for calibration
 BATCH_SIZE = 16  # Calibration batch size

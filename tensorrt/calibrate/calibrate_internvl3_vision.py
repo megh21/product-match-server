@@ -75,8 +75,6 @@ def load_calibration_batch(dataset, indices):
         logging.error(f"Error during image preprocessing: {e}", exc_info=True)
         raise
 
-    # Ensure the batch matches the expected INPUT_SHAPE for calibration
-    # Handle cases where the last batch might be smaller
     current_batch_size = pixel_values.shape[0]
     if current_batch_size < BATCH_SIZE:
         padding_size = BATCH_SIZE - current_batch_size
@@ -142,15 +140,13 @@ class InternVL3VisionCalibrator(trt.IInt8MinMaxCalibrator):
             logging.error(
                 f"Failed to load/preprocess calibration batch {self.batch_idx + 1}: {e}"
             )
-            # Returning None signals error to TensorRT build process
+
             return None
 
-        # Ensure buffers are allocated (might be needed if __init__ failed)
         if self.device_input is None:
             logging.error("GPU buffer not allocated.")
             return None
 
-        # Copy data from host (CPU) to device (GPU)
         cuda.memcpy_htod(self.device_input, np.ascontiguousarray(current_batch_np))
 
         self.batch_idx += 1
@@ -181,10 +177,7 @@ class InternVL3VisionCalibrator(trt.IInt8MinMaxCalibrator):
         except Exception as e:
             logging.error(f"Failed to write calibration cache {self.cache_file}: {e}")
 
-    # No explicit free_buffers needed when using pycuda.autoinit usually
 
-
-# --- Main function (for use by build script) ---
 def get_internvl3_vision_calibrator():
     """Factory function to create the calibrator."""
     logging.info(

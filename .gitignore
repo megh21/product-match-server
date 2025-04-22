@@ -14,4 +14,10 @@ models/*
 !data/faiss_index.bin
 !data/id_mapping.pkl
 *.zip
+*.engine
+*.plan
+*.onnx
+*.onnxruntime
+*.cache
 uploads/*
+frontend/

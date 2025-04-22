@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/product_db
+      - CURRENT_MODE=local
+      - LOCAL_BATCH_SIZE=16
+      - LOCAL_MAX_WORKERS=4
+      - CACHE_SIZE=150
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=product_db
+    restart: unless-stopped
+
+  triton:
+    image: nvcr.io/nvidia/tritonserver:25.03-py3
+    ports:
+      - "8001:8001"
+      - "8002:8002"
+      - "8000:8000"
+    volumes:
+      - ./triton_models:/models
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: >
+      tritonserver --model-repository=/models \
+      --log-verbose=1 \
+      --log-info=1 \
+      --log-warning=1 \
+      --log-error=1 \
+      --log-gpu-trace=1 \
+      --pinned-memory-pool-byte-size=0 \
+      --cuda-memory-pool-byte-size=0
+      --exit-timeout-secs=30 \
+      --exit-on-error=true \
+
+volumes:
+  mongodb_data:

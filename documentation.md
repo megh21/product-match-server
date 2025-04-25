@@ -562,17 +562,6 @@ The system supports various configuration options through environment variables:
 | `MONGODB_URI` | MongoDB connection URI | `mongodb://mongodb:27017/product_db` |
 | `TRITON_URL` | Triton Inference Server URL | `localhost:8000` |
 
-## Performance Metrics
-
-*Note: This section would typically be populated with actual benchmarks from the deployed system.*
-
-- **Throughput**: X requests per second
-- **Latency**: 
-  - P50: X ms
-  - P95: X ms
-  - P99: X ms
-- **Memory Usage**: X GB
-- **GPU Utilization**: X%
 
 ## Troubleshooting
 
